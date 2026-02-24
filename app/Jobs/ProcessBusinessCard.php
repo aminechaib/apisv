@@ -61,7 +61,7 @@ class ProcessBusinessCard implements ShouldQueue
             Log::info("Received Text for Processing: \n---\n" . $this->extractedText . "\n---");
 
             $system_prompt = "You are a JSON-only data extraction service. You will be given raw text from a business card. Your only job is to return a single, valid JSON object with the extracted data. Do not output any other text, explanations, or markdown.";
-            
+
             $user_prompt = "From the following text, extract the data into this exact JSON format:
             {\"name\":\"\", \"email\":\"\", \"phone\":\"\", \"company\":\"\", \"activity\":\"\", \"address\":\"\", \"website\":\"\", \"confidence_score\":0.0}
 
@@ -130,6 +130,8 @@ class ProcessBusinessCard implements ShouldQueue
      * @param  \Throwable  $exception
      * @return void
      */
+
+    // test
     public function failed(\Throwable $exception): void
     {
         // This is the final failure point.
