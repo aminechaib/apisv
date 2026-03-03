@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage; // <-- Add this
 use App\Services\OcrService; // <-- A hypothetical OCR service
 use App\Exports\ContactsExport; // <-- Add this
 use Maatwebsite\Excel\Facades\Excel; // <-- And this
+
 class ContactController extends Controller
 {
     /**
@@ -113,7 +114,7 @@ public function listContacts()
     /**
      * Store a newly created resource in storage.
      */
-    
+
 
     /**
      * Display the specified resource.
@@ -126,16 +127,39 @@ public function listContacts()
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Contact $contact)
     {
-        //
+        // Validate the incoming data
+        $validatedData = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:255',
+            'company' => 'nullable|string|max:255',
+            'activity' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
+            'website' => 'nullable|string|max:255',
+        ]);
+
+        // Mark that the contact no longer needs review after being edited
+        $validatedData['needs_review'] = false;
+
+        // Update the contact with the validated data
+        $contact->update($validatedData);
+
+        // Return the updated contact
+        return response()->json($contact);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified contact from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Contact $contact)
     {
-        //
+        // Delete the contact from the database
+        $contact->delete();
+
+        // Return a success response with no content
+        return response()->json(null, 204); // 204 No Content
     }
+
 }

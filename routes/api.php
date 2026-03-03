@@ -20,3 +20,5 @@ Route::post('/process-card', [ContactController::class, 'processCard']);
 Route::get('/contacts', [ContactController::class, 'listContacts']);
 Route::get('/export-contacts', [ContactController::class, 'exportToExcel']);
 Route::post('/process-text', [ContactController::class, 'processExtractedText']);
+Route::put('/contacts/{contact}', [ContactController::class, 'update']);
+Route::delete('/contacts/{contact}', [ContactController::class, 'destroy']);
