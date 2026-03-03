@@ -1,7 +1,5 @@
 <?php
 
-// app/Jobs/ProcessBusinessCard.php
-
 namespace App\Jobs;
 
 use App\Models\Contact;
@@ -29,10 +27,11 @@ class ProcessBusinessCard implements ShouldQueue
      *
      * @var int
      */
-    public $backoff = 60; // 60 seconds = 1 minute
+    public $backoff = 60;
 
-    protected $contact;
-    protected $extractedText;
+    protected Contact $contact;
+
+    protected string $extractedText;
 
     /**
      * Create a new job instance.
@@ -48,95 +47,153 @@ class ProcessBusinessCard implements ShouldQueue
      */
     public function handle(): void
     {
-        // We need to add a check here. If the job has failed before,
-        // we don't want to re-log the "Job Started" message and re-update the status to 'failed'
-        // if the final attempt also fails. The 'fail' method below handles that.
         if ($this->attempts() > 1) {
-            Log::info("Retrying Mistral AI Job for contact ID {$this->contact->id}. Attempt: " . $this->attempts());
+            Log::info("Retrying Mistral AI Job for contact ID {$this->contact->id}. Attempt: ".$this->attempts());
         } else {
             Log::info("Mistral AI Job Started for contact ID {$this->contact->id}");
         }
 
-        try {
-            Log::info("Received Text for Processing: \n---\n" . $this->extractedText . "\n---");
+        Log::info("Received Text for Processing: \n---\n".$this->extractedText."\n---");
 
-            $system_prompt = "You are a JSON-only data extraction service. You will be given raw text from a business card. Your only job is to return a single, valid JSON object with the extracted data. Do not output any other text, explanations, or markdown.";
+        $systemPrompt = 'You are a JSON-only data extraction service. You will be given raw text from a business card. Your only job is to return a single, valid JSON object with the extracted data. Do not output any other text, explanations, or markdown.';
 
-            $user_prompt = "From the following text, extract the data into this exact JSON format:
-            {\"name\":\"\", \"email\":\"\", \"phone\":\"\", \"company\":\"\", \"activity\":\"\", \"address\":\"\", \"website\":\"\", \"confidence_score\":0.0}
+        $userPrompt = "From the following text, extract the data into this exact JSON format:
+        {\"name\":\"\", \"email\":\"\", \"phone\":\"\", \"company\":\"\", \"activity\":\"\", \"address\":\"\", \"website\":\"\", \"confidence_score\":0.0}
 
-            RULES:
-            - 'name' is the person's name.
-            - 'activity' is the job title.
-            - 'website' starts with 'www' or 'http'.
-            - If any field is not found in the text, use an empty string \"\".
-            - Set 'confidence_score' to a float between 0.0 and 1.0 based on your certainty.
+        RULES:
+        - 'name' is the person's name.
+        - 'activity' is the job title.
+        - 'website' starts with 'www' or 'http'.
+        - If multiple emails are found, join them with '/'. Example: amine@gmail.com/said@gmail.com.
+        - If multiple phone numbers are found, join them with '/'. Example: 0675561007/0879224472.
+        - If multiple addresses are found, join them with '/'.
+        - If any field is not found in the text, use an empty string \"\".
+        - Set 'confidence_score' to a float between 0.0 and 1.0 based on your certainty.
 
-            TEXT TO PROCESS:
-            ---
-            {$this->extractedText}
-            ---
-            ";
+        TEXT TO PROCESS:
+        ---
+        {$this->extractedText}
+        ---
+        ";
 
-            $apiKey = config('app.mistral_api_key' );
-            if (!$apiKey) {
-                throw new \Exception("MISTRAL_API_KEY is not set.");
-            }
-
-            $response = Http::withToken($apiKey)
-                ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
-                ->timeout(60)
-                ->post('https://api.mistral.ai/v1/chat/completions', [
-                    'model' => 'mistral-tiny',
-                    'messages' => [
-                        ['role' => 'system', 'content' => $system_prompt],
-                        ['role' => 'user', 'content' => $user_prompt]
-                    ],
-                    'response_format' => ['type' => 'json_object']
-                ] );
-
-            if (!$response->successful()) {
-                // By throwing an exception here, we tell Laravel the job failed,
-                // which will trigger the retry mechanism.
-                throw new \Exception("Mistral API failed. Status: " . $response->status() . " Body: " . $response->body());
-            }
-
-            $rawJsonResponse = $response->json()['choices'][0]['message']['content'];
-            $structuredData = json_decode($rawJsonResponse, true);
-
-            if (is_null($structuredData) || !is_array($structuredData)) {
-                throw new \Exception("Failed to decode JSON from Mistral response. Raw: " . $rawJsonResponse);
-            }
-
-            $confidence = $structuredData['confidence_score'] ?? 0.5;
-            $structuredData['confidence_score'] = $confidence;
-            $structuredData['needs_review'] = $confidence < 0.85;
-            $structuredData['status'] = 'validated';
-            $this->contact->update($structuredData);
-            Log::info("Mistral AI structuring successful for contact ID {$this->contact->id}.");
-
-        } catch (\Exception $e) {
-            // When an exception is caught, we must re-throw it
-            // to let the Laravel queue worker know the job failed and should be retried.
-            // The 'fail' method below will be called automatically by Laravel.
-            throw $e;
+        $apiKey = config('app.mistral_api_key');
+        if (! $apiKey) {
+            throw new \Exception('MISTRAL_API_KEY is not set.');
         }
+
+        $response = Http::withToken($apiKey)
+            ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
+            ->timeout(60)
+            ->post('https://api.mistral.ai/v1/chat/completions', [
+                'model' => 'mistral-tiny',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+        if (! $response->successful()) {
+            throw new \Exception('Mistral API failed. Status: '.$response->status().' Body: '.$response->body());
+        }
+
+        $rawJsonResponse = data_get($response->json(), 'choices.0.message.content');
+        $structuredData = is_string($rawJsonResponse) ? json_decode($rawJsonResponse, true) : null;
+
+        if (is_null($structuredData) || ! is_array($structuredData)) {
+            throw new \Exception('Failed to decode JSON from Mistral response. Raw: '.(string) $rawJsonResponse);
+        }
+
+        $structuredData['email'] = $this->normalizeEmails($structuredData['email'] ?? null);
+        $structuredData['phone'] = $this->normalizePhones($structuredData['phone'] ?? null);
+        $structuredData['address'] = $this->normalizeAddresses($structuredData['address'] ?? null);
+
+        $confidence = (float) ($structuredData['confidence_score'] ?? 0.5);
+        $structuredData['confidence_score'] = $confidence;
+        $structuredData['needs_review'] = $confidence < 0.85;
+        $structuredData['status'] = 'validated';
+
+        $this->contact->update($structuredData);
+        Log::info("Mistral AI structuring successful for contact ID {$this->contact->id}.");
     }
 
     /**
      * Handle a job failure.
-     * This method is called automatically by Laravel after all retries have been exhausted.
-     *
-     * @param  \Throwable  $exception
-     * @return void
      */
-
-    // test
     public function failed(\Throwable $exception): void
     {
-        // This is the final failure point.
-        // Log the final error and update the contact status to 'failed'.
-        Log::error("Job permanently failed for contact ID {$this->contact->id} after all retries. Error: " . $exception->getMessage());
+        Log::error("Job permanently failed for contact ID {$this->contact->id} after all retries. Error: ".$exception->getMessage());
         $this->contact->update(['status' => 'failed', 'needs_review' => true]);
+    }
+
+    private function normalizeEmails(mixed $value): ?string
+    {
+        $chunks = $this->toArray($value, '/[,;|\s\/]+/');
+        $emails = [];
+
+        foreach ($chunks as $chunk) {
+            $candidate = mb_strtolower(trim($chunk));
+            if (filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $candidate;
+            }
+        }
+
+        $emails = array_values(array_unique($emails));
+
+        return empty($emails) ? null : implode('/', $emails);
+    }
+
+    private function normalizePhones(mixed $value): ?string
+    {
+        $chunks = $this->toArray($value, '/\s*(?:\/|,|;|\||\n+)\s*/');
+        $phones = [];
+
+        foreach ($chunks as $chunk) {
+            $candidate = trim((string) preg_replace('/^(tel|phone|mobile|mob|m)[:\s.-]+/i', '', trim($chunk)));
+            if ($candidate !== '') {
+                $phones[] = $candidate;
+            }
+        }
+
+        $phones = array_values(array_unique($phones));
+
+        return empty($phones) ? null : implode('/', $phones);
+    }
+
+    private function normalizeAddresses(mixed $value): ?string
+    {
+        $chunks = $this->toArray($value, '/\s*(?:\/|\||;)\s*/');
+        $addresses = [];
+
+        foreach ($chunks as $chunk) {
+            $candidate = trim((string) $chunk);
+            if ($candidate !== '') {
+                $addresses[] = $candidate;
+            }
+        }
+
+        $addresses = array_values(array_unique($addresses));
+
+        return empty($addresses) ? null : implode('/', $addresses);
+    }
+
+    private function toArray(mixed $value, string $pattern): array
+    {
+        if (is_null($value)) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values(array_filter(array_map('strval', $value), fn (string $item): bool => trim($item) !== ''));
+        }
+
+        $stringValue = trim((string) $value);
+        if ($stringValue === '') {
+            return [];
+        }
+
+        $parts = preg_split($pattern, $stringValue) ?: [];
+
+        return array_values(array_filter(array_map('trim', $parts), fn (string $item): bool => $item !== ''));
     }
 }
