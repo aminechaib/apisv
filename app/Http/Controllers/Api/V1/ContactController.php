@@ -10,7 +10,6 @@ use App\Jobs\ProcessBusinessCard;
 use App\Models\Contact;
 use App\Services\OcrService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -32,7 +31,7 @@ class ContactController extends Controller
     public function processCard(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'card_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'card_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -62,7 +61,7 @@ class ContactController extends Controller
         return response()->json([
             'message' => 'Card image received. Processing has started.',
             'contact_id' => $contact->id,
-            'image_url' => Storage::url($path),
+            'image_url' => $contact->image_url,
             'status' => $contact->status,
         ], 202);
     }
@@ -97,6 +96,7 @@ class ContactController extends Controller
         return response()->json([
             'message' => 'Text received. Processing has started.',
             'contact_id' => $contact->id,
+            'image_url' => $contact->image_url,
             'status' => $contact->status,
         ], 202);
     }

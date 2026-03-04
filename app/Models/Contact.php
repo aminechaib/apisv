@@ -1,11 +1,10 @@
 <?php
-// app/models/Contact.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage; // <-- Make sure this is imported
+use Illuminate\Support\Facades\Storage;
 
 class Contact extends Model
 {
@@ -35,23 +34,27 @@ class Contact extends Model
      *
      * @var array
      */
-    protected $appends = ['image_url']; // <-- ADD THIS LINE
+    protected $appends = ['image_url'];
 
     /**
      * Get the full URL for the contact's image.
-     *
-     * This is the new accessor method.
-     *
-     * @return string|null
      */
-    public function getImageUrlAttribute( ): ?string // <-- ADD THIS ENTIRE METHOD
+    public function getImageUrlAttribute(): ?string
     {
-        if ($this->image_path) {
-            // Use the asset() helper which correctly uses APP_URL
-            // to build the full URL.
-            return asset(Storage::url($this->image_path));
+        if (! $this->image_path) {
+            return null;
         }
 
-        return null;
+        if (filter_var($this->image_path, FILTER_VALIDATE_URL)) {
+            return $this->image_path;
+        }
+
+        $storageUrl = Storage::url($this->image_path);
+
+        if (filter_var($storageUrl, FILTER_VALIDATE_URL)) {
+            return $storageUrl;
+        }
+
+        return url($storageUrl);
     }
 }
