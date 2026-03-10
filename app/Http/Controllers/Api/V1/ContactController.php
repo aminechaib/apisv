@@ -6,10 +6,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Exports\ContactsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCardImageRequest;
 use App\Jobs\ProcessBusinessCard;
 use App\Models\Contact;
 use App\Services\OcrService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -28,32 +30,22 @@ class ContactController extends Controller
         return Excel::download(new ContactsExport, 'contacts.xlsx');
     }
 
-    public function processCard(Request $request)
+    public function processCard(StoreCardImageRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'card_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $path = $request->file('card_image')->store('public/cards');
+        $path = $request->file('card_image')->store('cards', 'public');
 
         $contact = Contact::create([
             'status' => 'processing',
             'image_path' => $path,
         ]);
 
-        $extractedText = OcrService::extractText(storage_path('app/'.$path));
+        $extractedText = trim($request->input('text', ''));
+        if ($extractedText === '') {
+            $extractedText = trim((string) (OcrService::extractText(Storage::disk('public')->path($path)) ?? ''));
+        }
 
-        if (is_null($extractedText)) {
-            $contact->update(['status' => 'failed', 'needs_review' => true]);
-
-            return response()->json([
-                'message' => 'Failed to extract text from the image. The contact has been flagged for review.',
-                'contact_id' => $contact->id,
-            ], 500);
+        if ($extractedText === '') {
+            $contact->update(['needs_review' => true]);
         }
 
         ProcessBusinessCard::dispatch($contact, $extractedText);
@@ -64,6 +56,27 @@ class ContactController extends Controller
             'image_url' => $contact->image_url,
             'status' => $contact->status,
         ], 202);
+    }
+
+    public function image(Contact $contact)
+    {
+        if (! $contact->image_path) {
+            abort(404);
+        }
+
+        if (filter_var($contact->image_path, FILTER_VALIDATE_URL)) {
+            return redirect()->away($contact->image_path);
+        }
+
+        if (! Storage::disk('public')->exists($contact->image_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->response(
+            $contact->image_path,
+            null,
+            ['Cache-Control' => 'public, max-age=86400']
+        );
     }
 
     public function listContacts()

@@ -1,9 +1,10 @@
 <?php
+
 // In routes/api.php
 
+use App\Http\Controllers\Api\V1\ContactController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\ContactController; // <-- Add this line
+use Illuminate\Support\Facades\Route; // <-- Add this line
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Change this route
 Route::post('/process-card', [ContactController::class, 'processCard']);
+Route::get('/cards/{contact}/image', [ContactController::class, 'image']);
 Route::get('/contacts', [ContactController::class, 'listContacts']);
 Route::get('/export-contacts', [ContactController::class, 'exportToExcel']);
 Route::post('/process-text', [ContactController::class, 'processExtractedText']);

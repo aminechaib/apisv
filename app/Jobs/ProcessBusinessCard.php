@@ -78,7 +78,16 @@ class ProcessBusinessCard implements ShouldQueue
 
         $apiKey = config('app.mistral_api_key');
         if (! $apiKey) {
-            throw new \Exception('MISTRAL_API_KEY is not set.');
+            Log::warning('MISTRAL_API_KEY is not set. Falling back to simple local parsing.');
+
+            $structuredData = $this->fallbackExtract($this->extractedText);
+            $structuredData['confidence_score'] = 0.0;
+            $structuredData['needs_review'] = true;
+            $structuredData['status'] = 'validated';
+
+            $this->contact->update($structuredData);
+
+            return;
         }
 
         $response = Http::withToken($apiKey)
@@ -195,5 +204,55 @@ class ProcessBusinessCard implements ShouldQueue
         $parts = preg_split($pattern, $stringValue) ?: [];
 
         return array_values(array_filter(array_map('trim', $parts), fn (string $item): bool => $item !== ''));
+    }
+
+    private function fallbackExtract(string $text): array
+    {
+        $email = null;
+        $phone = null;
+        $website = null;
+
+        if (preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $text, $matches)) {
+            $email = mb_strtolower($matches[0]);
+        }
+
+        if (preg_match('/(\+?\d[\d\s().-]{7,}\d)/', $text, $matches)) {
+            $phone = trim($matches[1]);
+        }
+
+        if (preg_match('/(https?:\/\/\S+|www\.\S+)/i', $text, $matches)) {
+            $website = rtrim(trim($matches[1]), '.,;)');
+        }
+
+        $name = null;
+        $company = null;
+        $activity = null;
+
+        $lines = array_values(
+            array_filter(
+                array_map('trim', preg_split('/\R+/', $text) ?: []),
+                fn (string $line): bool => $line !== ''
+            )
+        );
+
+        if (! empty($lines)) {
+            $name = $lines[0];
+            if (count($lines) > 1) {
+                $company = $lines[1];
+            }
+            if (count($lines) > 2) {
+                $activity = $lines[2];
+            }
+        }
+
+        return [
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'company' => $company,
+            'activity' => $activity,
+            'address' => null,
+            'website' => $website,
+        ];
     }
 }

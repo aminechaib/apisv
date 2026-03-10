@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class Contact extends Model
 {
@@ -49,12 +48,10 @@ class Contact extends Model
             return $this->image_path;
         }
 
-        $storageUrl = Storage::url($this->image_path);
+        $baseUrl = app()->runningInConsole()
+            ? rtrim(config('app.url'), '/')
+            : request()->getSchemeAndHttpHost();
 
-        if (filter_var($storageUrl, FILTER_VALIDATE_URL)) {
-            return $storageUrl;
-        }
-
-        return url($storageUrl);
+        return $baseUrl.'/api/cards/'.$this->id.'/image';
     }
 }
