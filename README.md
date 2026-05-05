@@ -9,8 +9,8 @@
 </p>
 
 <p align=\"center\">
-  <img src=\"Flag_map_of_Algeria.svg" width=\"30\" alt=\"Algeria\"> 
-  <strong><a href=\"https://github.com/aminechaib\">Amine Chaib</a></strong><br>
+  <img src=\"Flag_map_of_Algeria.svg\" width=\"30\" alt=\"Algeria Flag\"> 
+  <strong><a href=\"https://github.com/aminechaibdz\">Amine Chaib</a></strong><br>
   🇩🇿 DZ Fullstack Developer | Laravel Expert
 </p>
 
@@ -131,8 +131,9 @@ Docker: Tesseract layer
 See [AGENTS.md](AGENTS.md) for Boost rules.
 
 ## 📄 License
-MIT © 2024 [Amine Chaib](https://github.com/aminechaib)
+MIT © 2024 [Amine Chaib](https://github.com/aminechaibdz)
 
 <div align=\"center\">
-  <img src=\"https://komarev.com/ghpvc/?username=aminechaib&label=Profile%20views&color=0e75b6&style=flat\" alt=\"Profile views\">
+  <img src=\"https://komarev.com/ghpvc/?username=aminechaibdz&label=Profile%20views&color=0e75b6&style=flat\" alt=\"Profile views\">
+
 </div>
