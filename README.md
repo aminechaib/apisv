@@ -9,8 +9,8 @@
 </p>
 
 <p align=\"center\">
-  <img src=\"https://raw.githubusercontent.com/gilbarbara/readme-developer-languages/master/images/Algeria.png\" width=\"30\" alt=\"Algeria\"> 
-  <strong><a href=\"https://github.com/aminechaibdz\">Amine Chaib</a></strong><br>
+  <img src=\"Flag_map_of_Algeria.svg" width=\"30\" alt=\"Algeria\"> 
+  <strong><a href=\"https://github.com/aminechaib\">Amine Chaib</a></strong><br>
   🇩🇿 DZ Fullstack Developer | Laravel Expert
 </p>
 
@@ -126,13 +126,13 @@ Docker: Tesseract layer
 1. ⭐ Star & Fork
 2. `composer run pint`
 3. `git pr` with tests
-4. `@aminechaibdz` for features
+4. `@aminechaib` for features
 
 See [AGENTS.md](AGENTS.md) for Boost rules.
 
 ## 📄 License
-MIT © 2024 [Amine Chaib](https://github.com/aminechaibdz)
+MIT © 2024 [Amine Chaib](https://github.com/aminechaib)
 
 <div align=\"center\">
-  <img src=\"https://komarev.com/ghpvc/?username=aminechaibdz&label=Profile%20views&color=0e75b6&style=flat\" alt=\"Profile views\">
+  <img src=\"https://komarev.com/ghpvc/?username=aminechaib&label=Profile%20views&color=0e75b6&style=flat\" alt=\"Profile views\">
 </div>
