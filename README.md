@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gyfm/logos/main/business-card.svg" width="200" alt="Business Card OCR API">
+  <img src="https://raw.githubusercontent.com/aminechaib/apisv/main/business-card-icon.png" width="200" alt="Business Card OCR API">
   <h1>Business Card OCR API</h1>
   <img src="https://img.shields.io/badge/Laravel-12-brightgreen.svg?style=for-the-badge" alt="Laravel 12">
   <img src="https://img.shields.io/badge/OCR-Tesseract-blue.svg?style=for-the-badge" alt="Tesseract OCR">
@@ -8,9 +8,9 @@
   <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=for-the-badge" alt="MIT License">
 </p>
 
-<p align=\"center\">
-  <img src=\"Flag_map_of_Algeria.svg\" width=\"30\" alt=\"Algeria Flag\"> 
-  <strong><a href=\"https://github.com/aminechaibdz\">Amine Chaib</a></strong><br>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aminechaib/apisv/main/Flag_map_of_Algeria.svg" width="30" alt="Algeria Flag"> 
+  <strong><a href="https://github.com/aminechaib">Amine Chaib</a></strong><br>
   🇩🇿 DZ Fullstack Developer | Laravel Expert
 </p>
 
@@ -23,7 +23,7 @@
 2. Queue job → Mistral AI structures data (name/email/phone/company/activity/address/website + confidence)
 3. Store in DB → Review low-confidence → Export Excel
 
-Supports multi-values (e.g., phones: \"+213/0555\") and fallback parsing.
+Supports multi-values (e.g., phones: "+213/0555") and fallback parsing.
 
 ### ✨ Features
 - ✅ AI-powered extraction (Mistral Tiny / Regex fallback)
@@ -80,20 +80,20 @@ curl -X POST -F 'card_image=@your_card.jpg' http://127.0.0.1:8000/api/process-ca
 **Sample Response**:
 ```json
 {
-  \"contact_id\": 1,
-  \"status\": \"processing\",
-  \"image_url\": \"/api/cards/1/image\"
+  "contact_id": 1,
+  "status": "processing",
+  "image_url": "/api/cards/1/image"
 }
 ```
 
 **Contact JSON**:
 ```json
 {
-  \"name\": \"John Doe\",
-  \"email\": \"john@example.com\",
-  \"phone\": \"+1-555-1234\",
-  \"company\": \"ABC Corp\",
-  \"confidence_score\": 0.95
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+1-555-1234",
+  "company": "ABC Corp",
+  "confidence_score": 0.95
 }
 ```
 
@@ -131,9 +131,9 @@ Docker: Tesseract layer
 See [AGENTS.md](AGENTS.md) for Boost rules.
 
 ## 📄 License
-MIT © 2024 [Amine Chaib](https://github.com/aminechaibdz)
+MIT © 2024 [Amine Chaib](https://github.com/aminechaib)
 
-<div align=\"center\">
-  <img src=\"https://komarev.com/ghpvc/?username=aminechaibdz&label=Profile%20views&color=0e75b6&style=flat\" alt=\"Profile views\">
+<div align="center">
+  <img src="https://komarev.com/ghpvc/?username=aminechaib&label=Profile%20views&color=0e75b6&style=flat" alt="Profile views">
 
 </div>
