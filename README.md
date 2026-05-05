@@ -131,7 +131,7 @@ Docker: Tesseract layer
 See [AGENTS.md](AGENTS.md) for Boost rules.
 
 ## 📄 License
-MIT © 2024 [Amine Chaib](https://github.com/aminechaib)
+MIT © 2026 [Amine Chaib](https://github.com/aminechaib)
 
 <div align="center">
   <img src="https://komarev.com/ghpvc/?username=aminechaib&label=Profile%20views&color=0e75b6&style=flat" alt="Profile views">
