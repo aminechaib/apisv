@@ -1,59 +1,119 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://raw.githubusercontent.com/gyfm/logos/main/business-card.svg" width="200" alt="Business Card OCR API">
+  <h1>Business Card OCR API</h1>
+  <img src="https://img.shields.io/badge/Laravel-12-brightgreen.svg" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/OCR-Tesseract-blue.svg" alt="Tesseract OCR">
+  <img src="https://img.shields.io/badge/AI-Mistral%20Tiny-orange.svg" alt="Mistral AI">
+  <img src="https://img.shields.io/badge/Queue-Jobs-red.svg" alt="Queue Jobs">
+  <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="MIT License">
 </p>
 
-## About Laravel
+## 📋 Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Business Card OCR API** is a robust Laravel 12 RESTful API that automates business card processing. Upload a card image, extract text via OCR, structure data using AI, and manage contacts with export capabilities.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### ✨ Key Features
+- **Image Upload & OCR**: Tesseract OCR extracts text from business cards
+- **AI Data Structuring**: Mistral AI (tiny model) parses into JSON: `name`, `email`, `phone`, `company`, `activity`, `address`, `website`, `confidence_score`
+- **Queue Processing**: Asynchronous jobs with retries and fallback regex parsing
+- **Multi-value Support**: Emails/phones/addresses joined with `/`
+- **API Endpoints**: CRUD for contacts, image serving, Excel export
+- **Review Workflow**: Flag low-confidence (`<0.85`) extractions for manual review
+- **Tested**: Pest feature tests for core upload/processing flow
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠 Architecture
+```
+Upload Image → OCR Service → Queue Job (ProcessBusinessCard)
+             ↓
+     Contact Model ← Mistral AI / Fallback Parser
+             ↓
+   API: List / Update / Delete / Export Excel
+```
 
-## Learning Laravel
+## 🚀 Quick Start
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+1. **Clone & Install**
+   ```bash
+   git clone <repo> apisv
+   cd apisv
+   composer install
+   npm ci
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Environment Setup**
+   ```
+   DB_CONNECTION=sqlite  # or mysql/postgres
+   QUEUE_CONNECTION=database  # or redis
+   MISTRAL_API_KEY=your_key_here  # Optional: fallback works without
+   ```
 
-## Laravel Sponsors
+3. **Database & Run**
+   ```bash
+   php artisan migrate
+   php artisan db:seed  # Optional
+   php artisan queue:work &
+   php artisan serve
+   npm run dev  # For Tailwind
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+4. **Test**
+   ```bash
+   php artisan test
+   ```
 
-### Premium Partners
+## 📖 API Documentation
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Method | Endpoint | Description | Example |
+|--------|----------|-------------|---------|
+| `POST` | `/api/process-card` | Upload card image (multipart: `card_image`, optional `text`) | `curl -F "card_image=@card.jpg" http://localhost:8000/api/process-card` |
+| `POST` | `/api/process-text` | Submit extracted text | `{"text": "...", "image_url": "..."}` |
+| `GET` | `/api/contacts` | List validated contacts (paginated) | - |
+| `GET` | `/api/export-contacts` | Download Excel | - |
+| `GET` | `/api/cards/{id}/image` | Serve contact image | - |
+| `PUT` | `/api/contacts/{id}` | Update contact | `{"name": "...", "email": "..."}` |
+| `DELETE` | `/api/contacts/{id}` | Delete contact | - |
 
-## Contributing
+**Response Example** (processing):
+```json
+{
+  "message": "Card image received. Processing has started.",
+  "contact_id": 1,
+  "image_url": "http://localhost:8000/api/cards/1/image",
+  "status": "processing"
+}
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🔧 Requirements
+- PHP 8.3+
+- Laravel 12
+- Tesseract OCR (system install: `brew install tesseract` / `apt install tesseract-ocr`)
+- Composer, Node.js/NPM
+- Database: SQLite/MySQL/PostgreSQL
+- Queue driver (database/redis)
+- Optional: Mistral AI API key
 
-## Code of Conduct
+## 🧪 Testing
+```bash
+php artisan test --coverage  # Coverage report
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📈 Deployment
+- Forge/Vapor/Laravel Herd
+- Queue workers: Supervisor/Horizon
+- Storage: Public disk for images
+- OCR: Docker with Tesseract if serverless
 
-## Security Vulnerabilities
+## 🤝 Contributing
+1. Fork & PR
+2. Follow Laravel Pint: `composer run pint`
+3. Add tests: `php artisan make:test --pest`
+4. See [Laravel Boost Guidelines](AGENTS.md)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 📄 License
+MIT License - see [LICENSE](LICENSE) (add if missing).
 
-## License
+**Built with ❤️ using Laravel 12**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
